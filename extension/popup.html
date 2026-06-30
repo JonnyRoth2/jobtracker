@@ -5,7 +5,7 @@
     <style>
       body {
         font: 13px -apple-system, system-ui, sans-serif;
-        width: 250px;
+        width: 320px;
         padding: 14px;
         margin: 0;
       }
@@ -47,6 +47,37 @@
         min-height: 14px;
         margin-top: 6px;
       }
+      #list {
+        margin: 10px 0 4px;
+        max-height: 320px;
+        overflow-y: auto;
+      }
+      .job {
+        padding: 8px 0;
+        border-top: 1px solid #eee;
+      }
+      .job-title {
+        font-weight: 600;
+        line-height: 1.25;
+      }
+      .job-sub {
+        color: #777;
+        font-size: 11px;
+        margin: 2px 0 6px;
+      }
+      .job select {
+        width: 100%;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 12px;
+        background: #fff;
+      }
+      .empty {
+        color: #777;
+        font-size: 12px;
+        padding: 8px 0;
+      }
     </style>
   </head>
   <body>
@@ -55,6 +86,7 @@
     <button id="export">Save Excel now</button>
     <button id="clear">Clear all</button>
     <div id="status"></div>
+    <div id="list"></div>
     <div class="muted">
       Auto-saves to <b>Downloads/applications.xlsx</b> after each apply.
     </div>

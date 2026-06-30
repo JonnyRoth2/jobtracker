@@ -8,9 +8,13 @@ const LAST_DL_KEY = "lastDownloadId";
 const FILENAME = "applications.xlsx";
 const MAX_DESCRIPTION = 8000;
 
-const FIELDS = ["date", "company", "title", "location", "source", "url", "description"];
-const HEADERS = ["Date", "Company", "Title", "Location", "Source", "URL", "Description"];
-const COL_WIDTHS = [12, 22, 32, 20, 12, 42, 70];
+const FIELDS = ["date", "company", "title", "location", "source", "status", "url", "description"];
+const HEADERS = ["Date", "Company", "Title", "Location", "Source", "Status", "URL", "Description"];
+const COL_WIDTHS = [12, 22, 32, 20, 12, 14, 42, 70];
+
+// Application progress, set from the popup dropdown. First entry is the default.
+const STATUS_OPTIONS = ["No response", "Interview", "Offer", "Accepted"];
+const DEFAULT_STATUS = STATUS_OPTIONS[0];
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "JOB_APPLIED") {
@@ -24,7 +28,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .catch((e) => sendResponse({ ok: false, error: String(e) }));
     return true; // keep the message channel open for the async sendResponse
   }
+  if (message.type === "SET_STATUS") {
+    setStatus(message.url, message.status)
+      .then((ok) => sendResponse({ ok }))
+      .catch((e) => sendResponse({ ok: false, error: String(e) }));
+    return true; // async sendResponse
+  }
 });
+
+// Update one application's status (matched by URL) and rewrite the xlsx so the
+// Status column stays in sync with what the popup shows.
+async function setStatus(url, status) {
+  if (!STATUS_OPTIONS.includes(status)) return false;
+  const store = await chrome.storage.local.get(STORAGE_KEY);
+  const apps = store[STORAGE_KEY] || [];
+  const app = apps.find((a) => a.url === url);
+  if (!app) return false;
+  app.status = status;
+  await chrome.storage.local.set({ [STORAGE_KEY]: apps });
+  await writeXlsx();
+  return true;
+}
 
 // Today's date as YYYY-MM-DD in the LOCAL timezone. (new Date().toISOString()
 // is UTC, which rolls to "tomorrow" in the evening for anyone behind UTC.)
@@ -60,6 +84,7 @@ async function saveApplication(data) {
     title,
     location: (data.location || "").trim(),
     source: (data.source || "").trim(),
+    status: DEFAULT_STATUS, // updated later from the popup dropdown
     url,
     description: (data.description || "").trim().slice(0, MAX_DESCRIPTION),
   });
@@ -153,7 +178,8 @@ function sheetXml(apps) {
     rows += `<row r="${r}">`;
     FIELDS.forEach((field, i) => {
       const ref = colLetter(i + 1) + r;
-      const val = (app[field] ?? "").toString().replace(/\r\n/g, "\n");
+      let val = (app[field] ?? "").toString().replace(/\r\n/g, "\n");
+      if (field === "status" && !val) val = DEFAULT_STATUS; // older records
       if (field === "url") {
         rows += hyperlinkCell(ref, 3, val);
       } else if (field === "description") {

@@ -15,6 +15,26 @@ function firstText(selectors, root = document) {
   return "";
 }
 
+// LinkedIn/Indeed URLs on search pages carry the job id plus a pile of tracking
+// params, and that whole string is what we'd store + dedup on (so the same job
+// re-logs whenever a tracking param changes). Rebuild the canonical job URL.
+function canonicalUrl(hostname) {
+  const href = window.location.href;
+  if (hostname.includes("linkedin")) {
+    const m =
+      href.match(/currentJobId=(\d+)/) ||
+      location.pathname.match(/\/jobs\/view\/(\d+)/);
+    if (m) return `https://www.linkedin.com/jobs/view/${m[1]}/`;
+  } else if (hostname.includes("indeed")) {
+    const el = document.querySelector("[data-jk]");
+    const jk =
+      new URLSearchParams(location.search).get("jk") ||
+      (el && el.getAttribute("data-jk"));
+    if (jk) return `https://www.indeed.com/viewjob?jk=${jk}`;
+  }
+  return href;
+}
+
 function getJobData() {
   const hostname = location.hostname;
   let source = "";
@@ -65,13 +85,19 @@ function getJobData() {
     );
     description = firstText(
       [
-        "#job-details",
-        ".jobs-description__content",
         ".jobs-description-content__text",
         ".jobs-box__html-content",
+        ".jobs-description__content",
+        "#job-details",
       ],
       pane
     );
+
+    // The top card lumps "Location · Reposted 2 weeks ago · 100 applicants"
+    // into one string — keep only the first segment (the location).
+    if (locationText) locationText = locationText.split(/[·•|\n]/)[0].trim();
+    // Drop LinkedIn's leading "About the job" heading from the description.
+    description = description.replace(/^About the job\s*/i, "");
   } else if (hostname.includes("indeed")) {
     source = "Indeed";
     title = firstText([
@@ -131,7 +157,7 @@ function getJobData() {
     location: locationText,
     description: description.slice(0, 8000),
     source,
-    url: window.location.href,
+    url: canonicalUrl(hostname),
   };
 }
 
