@@ -30,4 +30,9 @@ document.getElementById("clear").addEventListener("click", async () => {
   refresh();
 });
 
+// Live-update the count if an application is saved while the popup is open.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && changes[STORAGE_KEY]) refresh();
+});
+
 refresh();

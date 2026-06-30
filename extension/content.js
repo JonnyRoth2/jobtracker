@@ -1,11 +1,15 @@
 console.log("Job Tracker loaded");
 
-// Returns the trimmed innerText of the first selector that matches & has text.
-function firstText(selectors) {
+// Returns the trimmed text of the first selector that matches & has text.
+// `root` lets us scope the search to a container (e.g. the job detail pane).
+// Falls back to textContent because innerText is "" for collapsed/offscreen
+// nodes that LinkedIn sometimes uses.
+function firstText(selectors, root = document) {
   for (const sel of selectors) {
-    const el = document.querySelector(sel);
-    if (el && el.innerText && el.innerText.trim()) {
-      return el.innerText.trim();
+    const el = root.querySelector(sel);
+    if (el) {
+      const t = (el.innerText || el.textContent || "").trim();
+      if (t) return t;
     }
   }
   return "";
@@ -21,24 +25,53 @@ function getJobData() {
 
   if (hostname.includes("linkedin")) {
     source = "LinkedIn";
-    title = firstText([
-      ".job-details-jobs-unified-top-card__job-title",
-      ".jobs-unified-top-card__job-title",
-      "h1",
-    ]);
-    company = firstText([
-      ".job-details-jobs-unified-top-card__company-name",
-      ".jobs-unified-top-card__company-name",
-    ]);
-    locationText = firstText([
-      ".job-details-jobs-unified-top-card__primary-description-container",
-      ".jobs-unified-top-card__bullet",
-    ]);
-    description = firstText([
-      "#job-details",
-      ".jobs-description__content",
-      ".jobs-box__html-content",
-    ]);
+    // On the /jobs/search-results/ layout the selected job renders in a
+    // right-hand detail pane. Scope to it so we read the open job, not a
+    // list item, and so a bare "h1" fallback can't grab the page chrome.
+    const pane =
+      document.querySelector(
+        ".jobs-search__job-details, .jobs-details, .scaffold-layout__detail, .job-view-layout"
+      ) || document;
+
+    title = firstText(
+      [
+        ".job-details-jobs-unified-top-card__job-title h1",
+        ".job-details-jobs-unified-top-card__job-title a",
+        ".job-details-jobs-unified-top-card__job-title",
+        ".jobs-unified-top-card__job-title",
+        'a[href*="/jobs/view/"]',
+        "h1",
+      ],
+      pane
+    );
+    company = firstText(
+      [
+        ".job-details-jobs-unified-top-card__company-name a",
+        ".job-details-jobs-unified-top-card__company-name",
+        ".jobs-unified-top-card__company-name a",
+        ".jobs-unified-top-card__company-name",
+        'a[href*="/company/"]',
+      ],
+      pane
+    );
+    locationText = firstText(
+      [
+        ".job-details-jobs-unified-top-card__primary-description-container .tvm__text",
+        ".job-details-jobs-unified-top-card__bullet",
+        ".jobs-unified-top-card__bullet",
+        ".job-details-jobs-unified-top-card__primary-description-container",
+      ],
+      pane
+    );
+    description = firstText(
+      [
+        "#job-details",
+        ".jobs-description__content",
+        ".jobs-description-content__text",
+        ".jobs-box__html-content",
+      ],
+      pane
+    );
   } else if (hostname.includes("indeed")) {
     source = "Indeed";
     title = firstText([
@@ -77,6 +110,19 @@ function getJobData() {
       '[data-hook="job-description"]',
       ".job-details",
     ]);
+  }
+
+  // Last-resort fallbacks from page metadata so a missed DOM selector doesn't
+  // produce a wholly blank record. (og:title on a /jobs/view/ page is the exact
+  // job title; on a search page it may be approximate, but only used if the
+  // scoped DOM scrape above found nothing.)
+  if (!title) {
+    const og = document.querySelector('meta[property="og:title"]');
+    if (og && og.content) title = og.content.trim();
+  }
+  if (!description) {
+    const ogd = document.querySelector('meta[property="og:description"]');
+    if (ogd && ogd.content) description = ogd.content.trim();
   }
 
   return {
@@ -130,6 +176,24 @@ document.addEventListener(
     // Scrape NOW, before the click navigates away or opens a modal.
     const data = getJobData();
     if (!data.url) return;
+
+    // If the structured scrape still misses, dump candidate nodes so the exact
+    // current class names can be pinned (LinkedIn renames these periodically).
+    if (!data.title && !data.company) {
+      console.warn(
+        "Job Tracker — scrape came back empty; nothing saved. Candidates on page:",
+        {
+          headings: [...document.querySelectorAll("h1, h2")]
+            .map((e) => (e.innerText || e.textContent || "").trim())
+            .filter(Boolean)
+            .slice(0, 8),
+          companyLinks: [...document.querySelectorAll('a[href*="/company/"]')]
+            .map((e) => (e.innerText || e.textContent || "").trim())
+            .filter(Boolean)
+            .slice(0, 5),
+        }
+      );
+    }
 
     console.log("Job Tracker — tracked application:", data);
     chrome.runtime.sendMessage({ type: "JOB_APPLIED", data });

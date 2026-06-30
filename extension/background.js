@@ -14,6 +14,7 @@ const COL_WIDTHS = [12, 22, 32, 20, 12, 42, 70];
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "JOB_APPLIED") {
+    console.log("Job Tracker BG — received apply:", message.data);
     handleApplied(message.data);
     return; // no response needed
   }
