@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Job Application Tracker",
   "version": "3.0",
-  "description": "Logs jobs you apply to on LinkedIn, Indeed, or Handshake. Export to CSV anytime — no server needed.",
+  "description": "Logs jobs you apply to on LinkedIn, Indeed, or Handshake into one growing, formatted Excel file. No server needed.",
 
   "permissions": ["storage", "unlimitedStorage", "downloads"],
 

@@ -10,13 +10,13 @@ async function refresh() {
   document.getElementById("count").textContent = apps.length;
 }
 
-// Manual re-sync. Normally the CSV is rewritten automatically on each apply;
+// Manual re-sync. Normally the .xlsx is rewritten automatically on each apply;
 // this is a fallback (e.g. if a write got skipped) and re-saves the full file.
 document.getElementById("export").addEventListener("click", () => {
   chrome.runtime.sendMessage({ type: "EXPORT_NOW" }, (resp) => {
     const status = document.getElementById("status");
     if (resp && resp.ok) {
-      status.textContent = "Saved to Downloads/applications.csv";
+      status.textContent = "Saved to Downloads/applications.xlsx";
     } else {
       status.textContent = "Nothing to save yet.";
     }
