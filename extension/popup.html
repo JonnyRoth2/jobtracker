@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        font: 13px -apple-system, system-ui, sans-serif;
+        width: 250px;
+        padding: 14px;
+        margin: 0;
+      }
+      h1 {
+        font-size: 14px;
+        margin: 0 0 10px;
+      }
+      .count {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 4px 0 12px;
+      }
+      button {
+        display: block;
+        width: 100%;
+        padding: 8px;
+        margin: 6px 0;
+        border: 0;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      #export {
+        background: #1a7f37;
+        color: #fff;
+      }
+      #clear {
+        background: #eee;
+        color: #333;
+      }
+      .muted {
+        color: #777;
+        font-size: 11px;
+        margin-top: 8px;
+      }
+      #status {
+        color: #1a7f37;
+        font-size: 11px;
+        min-height: 14px;
+        margin-top: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Job Application Tracker</h1>
+    <div class="count"><span id="count">0</span> tracked</div>
+    <button id="export">Save CSV now</button>
+    <button id="clear">Clear all</button>
+    <div id="status"></div>
+    <div class="muted">
+      Auto-saves to <b>Downloads/applications.csv</b> after each apply.
+    </div>
+  </body>
+  <script src="popup.js"></script>
+</html>

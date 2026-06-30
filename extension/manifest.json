@@ -1,19 +1,24 @@
 {
   "manifest_version": 3,
   "name": "Job Application Tracker",
-  "version": "2.0",
-  "description": "Logs a job to applications.csv whenever you click Apply on LinkedIn, Indeed, or Handshake.",
+  "version": "3.0",
+  "description": "Logs jobs you apply to on LinkedIn, Indeed, or Handshake. Export to CSV anytime — no server needed.",
+
+  "permissions": ["storage", "unlimitedStorage", "downloads"],
 
   "host_permissions": [
     "https://www.linkedin.com/*",
     "https://*.indeed.com/*",
-    "https://*.joinhandshake.com/*",
-    "http://localhost:5000/*",
-    "http://127.0.0.1:5000/*"
+    "https://*.joinhandshake.com/*"
   ],
 
   "background": {
     "service_worker": "background.js"
+  },
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Job Application Tracker"
   },
 
   "content_scripts": [
